@@ -4,13 +4,15 @@ import uvicorn
 app = FastAPI()
 
 hotels = [
-    {'id': 1, 'title': 'sochi', 'name':'Сочи'},
+    {'id': 1, 'title': 'sochi', 'name': 'Сочи'},
     {'id': 2, 'title': 'dubai', 'name': 'Дубай'}
 ]
+
 
 @app.get('/')
 def f():
     return 'Hello!!!'
+
 
 @app.get('/hotels')
 def get_hotels(
@@ -37,7 +39,7 @@ def delete_hotel(hotel_id: int):
 def create_hotel(
         title: str = Body(),
         name: str = Body()
-    ):
+):
     global hotels
     hotels.append({
         'id': hotels[-1]['id'] + 1,
@@ -52,7 +54,7 @@ def put_hotel(
         id: int = Body(),
         title: str = Body(),
         name: str = Body()
-    ):
+):
     for hotel in hotels:
         if hotel['id'] == id:
             hotel['title'] = title
