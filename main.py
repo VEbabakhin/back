@@ -4,22 +4,25 @@ import uvicorn
 app = FastAPI()
 
 hotels = [
-    {'id': 1, 'title': 'sochi', 'name': 'Сочи'},
-    {'id': 2, 'title': 'dubai', 'name': 'Дубай'}
+    {"id": 1, "title": "Sochi", "name": "sochi"},
+    {"id": 2, "title": "Дубай", "name": "dubai"},
+    {"id": 3, "title": "Мальдивы", "name": "maldivi"},
+    {"id": 4, "title": "Геленджик", "name": "gelendzhik"},
+    {"id": 5, "title": "Москва", "name": "moscow"},
+    {"id": 6, "title": "Казань", "name": "kazan"},
+    {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
 ]
-
-
-@app.get('/')
-def f():
-    return 'Hello!!!'
 
 
 @app.get('/hotels')
 def get_hotels(
         title: str | None = Query(default=None, description='Название отеля'),
-        id: int | None = Query(default=None, description='id отеля')):
+        id: int | None = Query(default=None, description='id отеля'),
+        page: int | None = Query(default=1, description='Номер страницы'),
+        per_page: int | None = Query(default=2, description='Количество отелей на странице')
+):
     hotels_ = []
-    for hotel in hotels:
+    for hotel in hotels[(page - 1) * per_page:(page - 1) * per_page + per_page]:
         if id and hotel['id'] != id:
             continue
         if title and hotel['title'] != title:
@@ -49,17 +52,19 @@ def create_hotel(
     return {'status': 'ok'}
 
 
-@app.put('/hotels')
+@app.put(
+    '/hotels/{hotel_id}',
+    summary='Обновление данных об отеле')
 def put_hotel(
-        id: int = Body(),
+        hotel_id: int,
         title: str = Body(),
         name: str = Body()
 ):
     for hotel in hotels:
-        if hotel['id'] == id:
+        if hotel['id'] == hotel_id:
             hotel['title'] = title
             hotel['name'] = name
-            return 'OK'
+            return {'status': 'OK'}
     return {'status': 'Not found'}
 
 
