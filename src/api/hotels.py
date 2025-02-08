@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Query, Body
-import uvicorn
+from fastapi import  Query, APIRouter
+from src.api.dependencies import PaginationDep
+from src.schemas.hotels import HotelPATCH, Hotel
 
-app = FastAPI()
 
+router = APIRouter(prefix='/hotels')
 hotels = [
     {"id": 1, "title": "Sochi", "name": "sochi"},
     {"id": 2, "title": "Дубай", "name": "dubai"},
@@ -14,75 +15,65 @@ hotels = [
 ]
 
 
-@app.get('/hotels')
+@router.get('')
 def get_hotels(
+        pagination: PaginationDep,
         title: str | None = Query(default=None, description='Название отеля'),
-        id: int | None = Query(default=None, description='id отеля'),
-        page: int | None = Query(default=1, description='Номер страницы'),
-        per_page: int | None = Query(default=2, description='Количество отелей на странице')
+        id: int | None = Query(default=None, description='id отеля')
+
 ):
     hotels_ = []
-    for hotel in hotels[(page - 1) * per_page:(page - 1) * per_page + per_page]:
+    for hotel in hotels:
         if id and hotel['id'] != id:
             continue
         if title and hotel['title'] != title:
             continue
         hotels_.append(hotel)
+    if pagination.page and pagination.per_page:
+        return hotels_[(pagination.page - 1) * pagination.per_page:][:pagination.per_page]
     return hotels_
 
 
-@app.delete('/hotels/{hotel_id}')
+@router.delete('/{hotel_id}')
 def delete_hotel(hotel_id: int):
     global hotels
     hotels = [hotel for hotel in hotels if hotel['id'] != hotel_id]
     return {'status': 'OK'}
 
 
-@app.post('/hotels')
-def create_hotel(
-        title: str = Body(),
-        name: str = Body()
-):
+@router.post('')
+def create_hotel(hotel_data: Hotel):
     global hotels
     hotels.append({
         'id': hotels[-1]['id'] + 1,
-        'title': title,
-        'name': name
+        'title': hotel_data.title,
+        'name': hotel_data.name
     })
     return {'status': 'ok'}
 
 
-@app.put(
-    '/hotels/{hotel_id}',
+@router.put(
+    '/{hotel_id}',
     summary='Обновление данных об отеле')
-def put_hotel(
-        hotel_id: int,
-        title: str = Body(),
-        name: str = Body()
-):
+def put_hotel(hotel_id: int, hotel_data: Hotel):
     for hotel in hotels:
         if hotel['id'] == hotel_id:
-            hotel['title'] = title
-            hotel['name'] = name
+            hotel['title'] = hotel_data.title
+            hotel['name'] = hotel_data.name
             return {'status': 'OK'}
     return {'status': 'Not found'}
 
 
-@app.patch('/hotels')
+@router.patch('/{hotel_id}')
 def patch_hotel(
-        id: int = Body(),
-        title: str = Body(None),
-        name: str = Body(None)
+        hotel_id: int,
+        hotel_data: HotelPATCH
 ):
     for hotel in hotels:
-        if id and hotel['id'] == id:
-            if title:
-                hotel['title'] = title
-            if name is not None:
-                hotel['name'] = name
+        if hotel['id'] == hotel_id:
+            if hotel_data.title:
+                hotel['title'] = hotel_data.title
+            if hotel_data.name is not None:
+                hotel['name'] = hotel_data.name
             return 'OK'
     return {'status': 'Not found'}
-
-
-if __name__ == '__main__':
-    uvicorn.run('main:app', reload=True)
